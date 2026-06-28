@@ -1,0 +1,299 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "specvalidator"
+version = "1.0.0"
+description = "Offline-first AI engineering assistant that converts markdown specifications into structured API schemas"
+readme = "README.md"
+license = {text = "AGPL-3.0-or-later"}
+authors = [
+    {name = "SpecValidator Team", email = "momulasaimanikanta6@gmail.com"}
+]
+maintainers = [
+    {name = "SpecValidator Team", email = "momulasaimanikanta6@gmail.com"}
+]
+keywords = [
+    "openapi",
+    "swagger",
+    "markdown",
+    "ai",
+    "llm",
+    "phi-4",
+    "llama.cpp",
+    "api-specification",
+    "documentation"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.29.0",
+    "python-multipart>=0.0.9",
+    "llama-cpp-python>=0.2.77",
+    "jsonschema>=4.22.0",
+    "markdown-it-py>=3.0.0",
+    "pypdf>=4.2.0",
+    "python-docx>=1.1.2",
+    "pyyaml>=6.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2.0",
+    "pytest-cov>=5.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.5.0",
+    "mypy>=1.10.0",
+    "bandit>=1.7.9",
+    "vulture>=2.11",
+    "pyupgrade>=3.17.0",
+    "semgrep>=1.105.0",
+    "pip-audit>=2.7.0",
+    "pre-commit>=3.7.0",
+    "types-requests>=2.31.0",
+    "types-pyyaml>=6.0.0",
+    "types-setuptools>=68.0.0",
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.25.0",
+]
+
+[project.urls]
+Homepage = "https://code.swecha.org/saimanikanta777/specvalidator"
+Repository = "https://code.swecha.org/saimanikanta777/specvalidator"
+Issues = "https://code.swecha.org/saimanikanta777/specvalidator/issues"
+Documentation = "https://code.swecha.org/saimanikanta777/specvalidator/-/blob/main/README.md"
+Changelog = "https://code.swecha.org/saimanikanta777/specvalidator/-/blob/main/CHANGELOG.md"
+
+[project.scripts]
+specvalidator = "backend.main:app"
+specvalidator-cli = "backend.cli:main"
+specvalidator-download-model = "backend.download_model:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backend*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+indent-width = 4
+quote-style = "double"
+docstring-code-format = true
+docstring-code-line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "T10", # flake8-debugger
+    "TRY", # tryceratops
+    "SIM", # flake8-simplify
+    "ARG", # flake8-unused-arguments
+    "PTH", # flake8-use-pathlib
+    "ERA", # eradicate
+    "PD",  # pandas-vet
+    "PGH", # pygrep-hooks
+    "PL",  # pylint
+    "PT",  # flake8-pytest-style
+    "Q",   # flake8-quotes
+    "RUF", # ruff-specific rules
+    "RET", # flake8-return
+    "SLF", # self-logger
+    "TCH", # typing-check
+    "INT", # flake8-gettext
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex (allow for now)
+    "PLR2004", # magic value used in comparison
+    "TCH001", # type checking for pytest
+    "S101",  # assert used (ok in tests)
+]
+per-file-ignores = [
+    "tests/* = [\"S101\", \"TCH001\"]",
+    "backend/download_model.py = [\"S101\"]",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+docstring-code-format = true
+
+[tool.ruff.lint.isort]
+known-first-party = ["backend"]
+import-headings = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+[tool.ruff.lint.flake8-bugbear]
+max-line-length = 100
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+implicit_reexport = true
+allow_untyped_globals = false
+enable_error_code = ["attr-defined", "no-untyped-def"]
+disable_error_code = ["import-untyped", "no-untyped-call", "union-attr"]
+
+[[tool.mypy.overrides]]
+module = [
+    "llama_cpp*",
+    "markdown_it*",
+    "pypdf*",
+    "docx*",
+    "yaml*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --strict-config --strict-markers"
+testpaths = ["backend"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["backend"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*_test.py",
+    "*/__pycache__/*",
+    "*/migrations/*",
+]
+branch = true
+parallel = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+fail_under = 80
+precision = 2
+show_missing = true
+skip_covered = false
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.bandit]
+targets = ["backend"]
+exclude_dirs = ["tests", "venv", ".venv"]
+skips = ["B101", "B601"]
+format = "json"
+output = "bandit-report.json"
+verbose = true
+
+[tool.vulture]
+min-confidence = 80
+exclude = ["*/tests/*", "*/test_*.py", "*_test.py", "backend/download_model.py"]
+
+[tool.semgrep]
+rules = ["auto"]
+config = "auto"
+exclude = ["tests", "venv", ".venv", ".git"]
+error = true
+json = "semgrep-report.json"
+
+[tool.pip-audit]
+desc = "on"
+format = "json"
+output = "pip-audit-report.json"
+fix = false
+
+[tool.pre-commit]
+default-stages = ["commit"]
+default-install-hook-types = ["pre-commit", "commit-msg", "pre-push"]
+
+[tool.commitizen]
+name = "cz_conventional_changelog"
+version = "1.0.0"
+tag_format = "$version"
+bump_message = "chore: bump version to $version"
+changelog_message = "chore: update changelog"
+changelog_increment_filename = "CHANGELOG.md"
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+atomic = false
+combine_as_imports = false
+honor_noqa = true
+known_first_party = ["backend"]
+import_headings = {
+    "FUTURE" = "__future__"
+    "STDLIB" = ""
+    "THIRDPARTY" = ""
+    "FIRSTPARTY" = "backend"
+    "LOCALFOLDER" = "."
+}
+
+[tool.pyupgrade]
+py311_plus = true
+keep-runtime-typing = true
+keep-percent-format = true
+
+[tool.ruff.lint.per-file-ignores]
+"backend/download_model.py" = ["S101"]
+"tests/*" = ["S101", "TCH001", "SLF001"]

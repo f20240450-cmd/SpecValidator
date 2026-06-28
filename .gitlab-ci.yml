@@ -1,0 +1,308 @@
+# GitLab CI/CD Pipeline for SpecValidator
+# =============================================================================
+
+stages:
+  - validate
+  - lint
+  - typecheck
+  - security
+  - test
+  - build
+  - deploy
+
+# Default image for jobs
+default:
+  image: python:3.11-slim
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq git curl build-essential libopenblas-dev > /dev/null
+    - pip install --upgrade pip > /dev/null
+    - pip install uv > /dev/null
+
+# Variables
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  UV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/uv"
+  RUFF_CACHE_DIR: "$CI_PROJECT_DIR/.cache/ruff"
+  MYPY_CACHE_DIR: "$CI_PROJECT_DIR/.cache/mypy"
+
+cache:
+  key: "${CI_JOB_NAME}-${CI_COMMIT_REF_SLUG}"
+  paths:
+    - .cache/pip/
+    - .cache/uv/
+    - .cache/ruff/
+    - .cache/mypy/
+    - frontend/node_modules/
+
+# =============================================================================
+# VALIDATION STAGE
+# =============================================================================
+
+validate:yaml:
+  stage: validate
+  script:
+    - echo "Validating YAML files..."
+    - pip install yamllint > /dev/null
+    - yamllint -c .yamllint.yml .specify/ .gitlab-ci.yml docker-compose*.yml 2>/dev/null || true
+
+validate:json:
+  stage: validate
+  script:
+    - echo "Validating JSON files..."
+    - python -m json.tool .specify/*.json > /dev/null
+    - python -m json.tool frontend/package.json > /dev/null
+
+validate:toml:
+  stage: validate
+  script:
+    - echo "Validating TOML files..."
+    - pip install tomli > /dev/null
+    - python -c "import tomli; [tomli.load(open(f, 'rb')) for f in ['pyproject.toml'] if __import__('os').path.exists(f)]"
+
+validate:markdown:
+  stage: validate
+  script:
+    - echo "Validating Markdown files..."
+    - pip install markdownlint-cli > /dev/null
+    - markdownlint README.md CONTRIBUTING.md USER_MANUAL.md SECURITY.md CODE_OF_CONDUCT.md CHANGELOG.md --config .markdownlint.json 2>/dev/null || true
+
+validate:dockerfile:
+  stage: validate
+  script:
+    - echo "Validating Dockerfile..."
+    - pip install hadolint > /dev/null
+    - hadolint Dockerfile
+
+# =============================================================================
+# LINT STAGE
+# =============================================================================
+
+lint:python:
+  stage: lint
+  script:
+    - echo "Linting Python code with Ruff..."
+    - cd backend
+    - uv pip install ruff > /dev/null
+    - uvx ruff check .
+    - uvx ruff format --check .
+
+lint:frontend:
+  stage: lint
+  image: node:18-alpine
+  script:
+    - echo "Linting Frontend code..."
+    - cd frontend
+    - npm ci --prefer-offline
+    - npm run lint
+
+lint:shell:
+  stage: lint
+  script:
+    - echo "Linting Shell scripts..."
+    - pip install shellcheck > /dev/null
+    - shellcheck start.sh backend/*.sh 2>/dev/null || true
+
+# =============================================================================
+# TYPE CHECK STAGE
+# =============================================================================
+
+typecheck:python:
+  stage: typecheck
+  script:
+    - echo "Type checking Python code with mypy..."
+    - cd backend
+    - uv pip install mypy types-requests types-urllib3 types-pyyaml > /dev/null
+    - uvx mypy --strict --ignore-missing-imports .
+
+# =============================================================================
+# SECURITY STAGE
+# =============================================================================
+
+security:bandit:
+  stage: security
+  script:
+    - echo "Running Bandit security scan..."
+    - cd backend
+    - uv pip install bandit > /dev/null
+    - uvx bandit -r . -f json -o bandit-report.json || true
+    - uvx bandit -r . -ll
+
+security:semgrep:
+  stage: security
+  script:
+    - echo "Running Semgrep security scan..."
+    - pip install semgrep > /dev/null
+    - semgrep --config=auto --error . || true
+
+security:gitleaks:
+  stage: security
+  image: gitleaks/gitleaks:latest
+  script:
+    - echo "Scanning for secrets with Gitleaks..."
+    - gitleaks detect --source=/builds/${CI_PROJECT_PATH} --verbose
+
+security:dependency-audit:
+  stage: security
+  script:
+    - echo "Auditing Python dependencies..."
+    - cd backend
+    - uv pip install pip-audit > /dev/null
+    - uvx pip-audit -r requirements.txt || true
+    - echo "Auditing Node.js dependencies..."
+    - cd ../frontend
+    - npm audit --audit-level=high || true
+
+# =============================================================================
+# TEST STAGE
+# =============================================================================
+
+test:backend:
+  stage: test
+  script:
+    - echo "Running backend tests..."
+    - cd backend
+    - uv pip install pytest pytest-cov pytest-asyncio > /dev/null
+    - uvx pytest -v --cov=. --cov-report=xml --cov-report=term-missing --cov-fail-under=80
+  coverage: '/TOTAL.*\s+(\d+%)$/'
+
+test:frontend:
+  stage: test
+  image: node:18-alpine
+  script:
+    - echo "Running frontend tests..."
+    - cd frontend
+    - npm ci --prefer-offline
+    - npm test -- --coverage --watchAll=false --passWithNoTests
+  coverage: '/All files\s+\d+\.\d+\s+\d+\.\d+\s+\d+\.\d+\s+(\d+\.\d+%)/'
+
+# =============================================================================
+# BUILD STAGE
+# =============================================================================
+
+build:docker:
+  stage: build
+  image: docker:24.0.7
+  services:
+    - docker:24.0.7-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_BUILDKIT: "1"
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - echo "Building Docker image..."
+    - docker build --pull -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  only:
+    - main
+    - tags
+
+build:frontend:
+  stage: build
+  image: node:18-alpine
+  script:
+    - echo "Building frontend..."
+    - cd frontend
+    - npm ci --prefer-offline
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/build/
+    expire_in: 1 week
+
+# =============================================================================
+# DEPLOY STAGE (staging)
+# =============================================================================
+
+deploy:staging:
+  stage: deploy
+  image: docker:24.0.7
+  services:
+    - docker:24.0.7-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - echo "Deploying to staging..."
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:staging
+    - docker push $CI_REGISTRY_IMAGE:staging
+    - echo "Staging deployment complete"
+  environment:
+    name: staging
+    url: https://staging.specvalidator.example.com
+  only:
+    - main
+  when: manual
+
+# ==================================================================================================================
+# DEPLOY STAGE (production)
+# =============================================================================
+
+deploy:production:
+  stage: deploy
+  image: docker:24.0.7
+  services:
+    - docker:24.0.7-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - echo "Deploying to production..."
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest
+    - echo "Production deployment complete"
+  environment:
+    name: production
+    url: https://specvalidator.example.com
+  only:
+    - tags
+  when: manual
+
+# =============================================================================
+# PAGES (documentation deployment)
+# =============================================================================
+
+pages:
+  stage: deploy
+  image: node:18-alpine
+  script:
+    - echo "Building documentation..."
+    - cd frontend
+    - npm ci --prefer-offline
+    - npm run build
+    - cp -r build/* public/
+  artifacts:
+    paths:
+      - frontend/public
+  only:
+    - main
+
+# =============================================================================
+# SCHEDULED PIPELINES
+# =============================================================================
+
+# Weekly dependency update check
+weekly:dependency-check:
+  stage: security
+  trigger:
+    schedule: "0 0 * * 0"  # Every Sunday at midnight
+    strategy: depend
+
+# =============================================================================
+# RULES FOR JOB EXECUTION
+# =============================================================================
+
+# Skip jobs on tag creation except build and deploy
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG
+      variables:
+        - $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"

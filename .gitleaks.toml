@@ -1,0 +1,254 @@
+# Gitleaks Configuration for SpecValidator
+# https://github.com/gitleaks/gitleaks
+
+title = "SpecValidator Gitleaks Config"
+
+# Disable default rules we don't need
+[allowlist]
+description = "Global allowlist"
+paths = [
+    "(?i)CHANGELOG\\.md",
+    "(?i)README\\.md",
+    "(?i)LICENSE",
+    "(?i)\\.gitignore",
+    "(?i)\\.env\\.example",
+    "(?i)docker-compose\\.yml",
+    "(?i)\\.dockerignore",
+    "(?i)\\.yamllint\\.yml",
+    "(?i)\\.markdownlint\\.json",
+    "(?i)\\.editorconfig",
+    "(?i)pyproject\\.toml",
+    "(?i)package\\.json",
+    "(?i)package-lock\\.json",
+    "(?i)\\.pre-commit-config\\.yaml",
+    "(?i)\\.gitlab-ci\\.yml",
+    "(?i)\\.gitleaks\\.toml",
+    "frontend/build/",
+    "frontend/node_modules/",
+    ".venv/",
+    "venv/",
+    "__pycache__/",
+    "*.pyc",
+    ".cache/",
+    "htmlcov/",
+    "*.egg-info/",
+    "dist/",
+    "build/",
+    ".git/",
+    "specs/",
+    ".opencode/",
+    ".specify/",
+]
+
+# Allow specific patterns
+[[allowlist]]
+description = "Allow example/test credentials in documentation"
+regexes = [
+    "(?i)example",
+    "(?i)test",
+    "(?i)dummy",
+    "(?i)placeholder",
+    "(?i)your_",
+    "(?i)your-",
+    "(?i)changeme",
+    "(?i)replace_me",
+    "sk-[a-zA-Z0-9]{20,}",
+    "ghp_[a-zA-Z0-9]{36}",
+    "gho_[a-zA-Z0-9]{36}",
+    "ghu_[a-zA-Z0-9]{36}",
+    "ghs_[a-zA-Z0-9]{36}",
+    "ghr_[a-zA-Z0-9]{36}",
+]
+
+# Custom rules for SpecValidator
+[[rules]]
+id = "specvalidator-aws-access-key"
+description = "AWS Access Key ID"
+regex = '''(?i)(aws_access_key_id|aws_access_key|aws_key_id)['\"]?\s*[:=]\s*['\"]?(AKIA[0-9A-Z]{16})['\"]?'''
+tags = ["key", "aws"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-aws-secret-key"
+description = "AWS Secret Access Key"
+regex = '''(?i)(aws_secret_access_key|aws_secret_key|aws_secret)['\"]?\s*[:=]\s*['\"]?([A-Za-z0-9/+=]{40})['\"]?'''
+tags = ["key", "aws"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-github-token"
+description = "GitHub Personal Access Token"
+regex = '''(?i)(github_token|github_pat|gh_token|gh_pat)['\"]?\s*[:=]\s*['\"]?(gh[oprsu]_[a-zA-Z0-9]{36,255})['\"]?'''
+tags = ["key", "github"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-gitlab-token"
+description = "GitLab Personal Access Token"
+regex = '''(?i)(gitlab_token|gitlab_pat|gl_token|gl_pat)['\"]?\s*[:=]\s*['\"]?(glpat-[a-zA-Z0-9_-]{20,})['\"]?'''
+tags = ["key", "gitlab"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-openai-key"
+description = "OpenAI API Key"
+regex = '''(?i)(openai_api_key|openai_key|openai_token)['\"]?\s*[:=]\s*['\"]?(sk-[a-zA-Z0-9]{48,})['\"]?'''
+tags = ["key", "openai"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-anthropic-key"
+description = "Anthropic API Key"
+regex = '''(?i)(anthropic_api_key|anthropic_key|claude_api_key)['\"]?\s*[:=]\s*['\"]?(sk-ant-[a-zA-Z0-9_-]{95,})['\"]?'''
+tags = ["key", "anthropic"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-database-url"
+description = "Database Connection String"
+regex = '''(?i)(database_url|db_url|connection_string|conn_str)['\"]?\s*[:=]\s*['\"]?([a-zA-Z]+://[^'"\s]+)['\"]?'''
+tags = ["credential", "database"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-jwt-secret"
+description = "JWT Secret Key"
+regex = '''(?i)(jwt_secret|jwt_key|secret_key|app_secret)['\"]?\s*[:=]\s*['\"]?([a-zA-Z0-9_-]{32,})['\"]?'''
+tags = ["key", "jwt"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-encryption-key"
+description = "Encryption Key"
+regex = '''(?i)(encryption_key|encrypt_key|cipher_key|aes_key)['\"]?\s*[:=]\s*['\"]?([a-zA-Z0-9+/=]{32,})['\"]?'''
+tags = ["key", "encryption"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-api-key-generic"
+description = "Generic API Key Pattern"
+regex = '''(?i)(api_key|apikey|api_token|api_secret|access_token|access_key)['\"]?\s*[:=]\s*['\"]?([a-zA-Z0-9_\-]{20,})['\"]?'''
+tags = ["key", "api"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-private-key"
+description = "Private Key (RSA, SSH, PEM)"
+regex = '''-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----'''
+tags = ["key", "private-key"]
+
+[[rules]]
+id = "specvalidator-ssh-key"
+description = "SSH Private Key"
+regex = '''-----BEGIN OPENSSH PRIVATE KEY-----'''
+tags = ["key", "ssh"]
+
+[[rules]]
+id = "specvalidator-slack-token"
+description = "Slack Bot/User Token"
+regex = '''(?i)(slack_token|slack_bot_token|slack_user_token)['\"]?\s*[:=]\s*['\"]?(xox[baprs]-[a-zA-Z0-9-]{10,})['\"]?'''
+tags = ["key", "slack"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-discord-token"
+description = "Discord Bot Token"
+regex = '''(?i)(discord_token|discord_bot_token)['\"]?\s*[:=]\s*['\"]?([a-zA-Z0-9._-]{59,})['\"]?'''
+tags = ["key", "discord"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-heroku-key"
+description = "Heroku API Key"
+regex = '''(?i)(heroku_api_key|heroku_key)['\"]?\s*[:=]\s*['\"]?([a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12})['\"]?'''
+tags = ["key", "heroku"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-stripe-key"
+description = "Stripe API Key"
+regex = '''(?i)(stripe_api_key|stripe_key|stripe_secret)['\"]?\s*[:=]\s*['\"]?(sk_live_[a-zA-Z0-9]{24,})['\"]?'''
+tags = ["key", "stripe"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-sendgrid-key"
+description = "SendGrid API Key"
+regex = '''(?i)(sendgrid_api_key|sendgrid_key)['\"]?\s*[:=]\s*['\"]?(SG\.[a-zA-Z0-9._-]{22,})['\"]?'''
+tags = ["key", "sendgrid"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-mailgun-key"
+description = "Mailgun API Key"
+regex = '''(?i)(mailgun_api_key|mailgun_key)['\"]?\s*[:=]\s*['\"]?(key-[a-zA-Z0-9]{32,})['\"]?'''
+tags = ["key", "mailgun"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-twilio-key"
+description = "Twilio Auth Token"
+regex = '''(?i)(twilio_auth_token|twilio_token|twilio_secret)['\"]?\s*[:=]\s*['\"]?([a-zA-Z0-9]{32,})['\"]?'''
+tags = ["key", "twilio"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-google-cloud-key"
+description = "Google Cloud Service Account Key"
+regex = '''(?i)(google_application_credentials|gcp_credentials|gcp_key)['\"]?\s*[:=]\s*['\"]?(\{.*"type"\s*:\s*"service_account".*\})['\"]?'''
+tags = ["key", "gcp"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-docker-config"
+description = "Docker Config / Auth"
+regex = '''(?i)(docker_config|docker_auth|docker_password)['\"]?\s*[:=]\s*['\"]?([a-zA-Z0-9+/=]{20,})['\"]?'''
+tags = ["credential", "docker"]
+secret-group = 2
+
+[[rules]]
+id = "specvalidator-kubernetes-config"
+description = "Kubernetes Config / Token"
+regex = '''(?i)(kubeconfig|kubernetes_token|k8s_token)['\"]?\s*[:=]\s*['\"]?([a-zA-Z0-9._-]{20,})['\"]?'''
+tags = ["credential", "kubernetes"]
+secret-group = 2
+
+# Extended entropy-based detection
+[[rules]]
+id = "specvalidator-high-entropy-string"
+description = "High Entropy String (potential secret)"
+regex = '''(?i)(password|passwd|pwd|secret|token|key|credential)['\"]?\s*[:=]\s*['\"]?([a-zA-Z0-9+/=_-]{40,})['\"]?'''
+entropy = 4.5
+tags = ["credential", "high-entropy"]
+secret-group = 2
+
+# File-based patterns
+[[rules]]
+id = "specvalidator-dotenv-file"
+description = ".env file"
+path = '''\.env(\..+)?$'''
+tags = ["file", "config"]
+
+[[rules]]
+id = "specvalidator-ssh-config"
+description = "SSH Config File"
+path = '''ssh/config$'''
+tags = ["file", "ssh"]
+
+[[rules]]
+id = "specvalidator-kubeconfig-file"
+description = "Kubeconfig File"
+path = '''kubeconfig$'''
+tags = ["file", "kubernetes"]
+
+[[rules]]
+id = "specvalidator-docker-config-file"
+description = "Docker Config File"
+path = '''\.docker/config\.json$'''
+tags = ["file", "docker"]
+
+[[rules]]
+id = "specvalidator-netrc-file"
+description = ".netrc File"
+path = '''\.netrc$'''
+tags = ["file", "credential"]

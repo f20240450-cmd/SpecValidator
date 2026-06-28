@@ -1,0 +1,12 @@
+{
+  "endpoint": "string",
+  "http_method": "string",
+  "expected_parameters": [
+    {
+      "name": "string",
+      "type": "string",
+      "required": true
+    }
+  ],
+  "inferred_rate_limit": "string"
+}

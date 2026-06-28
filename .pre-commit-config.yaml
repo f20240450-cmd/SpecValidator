@@ -1,0 +1,174 @@
+# Pre-commit Configuration for SpecValidator
+# Install: pre-commit install
+# Run: pre-commit run --all-files
+
+repos:
+  # --------------------------------------------------------------
+  # General file checks
+  # --------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=10000']
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: debug-logger
+      - id: destroyed-symlinks
+      - id: detect-private-key
+      - id: fix-byte-order-marker
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+      - id: no-commit-to-branch
+        args: ['--branch', 'main', '--branch', 'master']
+      - id: pretty-format-json
+        args: ['--autofix', '--indent=2']
+      - id: requirements-txt-fixer
+      - id: check-executables-have-shebangs
+
+  # --------------------------------------------------------------
+  # Python: Ruff (linting + formatting)
+  # --------------------------------------------------------------
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.6
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  # --------------------------------------------------------------
+  # Python: MyPy (type checking)
+  # --------------------------------------------------------------
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        args: [--strict, --ignore-missing-imports]
+        additional_dependencies:
+          - types-requests
+          - types-pyyaml
+          - types-setuptools
+
+  # --------------------------------------------------------------
+  # Python: Bandit (security)
+  # --------------------------------------------------------------
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.9
+    hooks:
+      - id: bandit
+        args: [-r, backend, -f, json, -o, bandit-report.json]
+        exclude: ^tests/
+
+  # --------------------------------------------------------------
+  # Python: Vulture (dead code detection)
+  # --------------------------------------------------------------
+  - repo: https://github.com/PyCQA/vulture
+    rev: v2.11
+    hooks:
+      - id: vulture
+        args: [--min-confidence=80, backend]
+
+  # --------------------------------------------------------------
+  # Python: PyUpgrade (modernize syntax)
+  # --------------------------------------------------------------
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.17.1
+    hooks:
+      - id: pyupgrade
+        args: [--py311-plus]
+
+  # --------------------------------------------------------------
+  # Python: Semgrep (static analysis)
+  # --------------------------------------------------------------
+  - repo: https://github.com/returntocorp/semgrep
+    rev: v1.105.0
+    hooks:
+      - id: semgrep
+        args: [--config=auto, --error, --json=semgrep-report.json]
+        exclude: ^tests/
+
+  # --------------------------------------------------------------
+  # Secrets: Gitleaks
+  # --------------------------------------------------------------
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.23.1
+    hooks:
+      - id: gitleaks
+        args: [--verbose, --config=.gitleaks.toml]
+
+  # --------------------------------------------------------------
+  # Frontend: ESLint + Prettier
+  # --------------------------------------------------------------
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.57.0
+    hooks:
+      - id: eslint
+        files: \.(js|jsx|ts|tsx)$
+        types: [file]
+        additional_dependencies:
+          - eslint@8.57.0
+          - '@typescript-eslint/parser@7.0.0'
+          - '@typescript-eslint/eslint-plugin@7.0.0'
+          - eslint-plugin-react@7.34.0
+          - eslint-plugin-react-hooks@4.6.0
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.2.5
+    hooks:
+      - id: prettier
+        types_or: [javascript, jsx, typescript, tsx, css, scss, json, yaml, markdown]
+        args: [--write]
+
+  # --------------------------------------------------------------
+  # Docker: Hadolint
+  # --------------------------------------------------------------
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint
+        files: ^Dockerfile
+
+  # --------------------------------------------------------------
+  # Markdown: markdownlint
+  # --------------------------------------------------------------
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.41.0
+    hooks:
+      - id: markdownlint
+        args: [--fix]
+        files: \.(md|markdown)$
+
+  # --------------------------------------------------------------
+  # Shell: ShellCheck
+  # --------------------------------------------------------------
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        files: \.(sh|bash)$
+
+  # --------------------------------------------------------------
+  # Git: Commit message linting
+  # --------------------------------------------------------------
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.13.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+
+  # --------------------------------------------------------------
+  # Custom: Check for TODO/FIXME in code
+  # --------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: check-todo-fixme
+        name: Check for TODO/FIXME comments
+        entry: bash -c 'grep -r "TODO\|FIXME" --include="*.py" --include="*.js" --include="*.ts" --include="*.jsx" --include="*.tsx" backend/ frontend/ && echo "Found TODO/FIXME comments" || true'
+        language: system
+        verbose: true

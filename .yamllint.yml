@@ -1,0 +1,112 @@
+# Yamllint configuration for SpecValidator
+# https://yamllint.readthedocs.io/en/stable/configuration.html
+
+extends: default
+
+rules:
+  # Line length
+  line-length:
+    max: 120
+    level: warning
+
+  # Indentation
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+    level: error
+
+  # Trailing spaces
+  trailing-spaces:
+    level: error
+
+  # Empty lines
+  empty-lines:
+    max: 2
+    max-start: 0
+    max-end: 1
+    level: warning
+
+  # Document start
+  document-start:
+    present: false
+    level: warning
+
+  # Document end
+  document-end:
+    present: true
+    level: warning
+
+  # Key ordering
+  key-ordering:
+    level: disabled
+
+  # Brackets and braces
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+    level: error
+
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+    level: error
+
+  # Colons
+  colons:
+    max-spaces-before: 0
+    max-spaces-after: 1
+    level: error
+
+  # Commas
+  commas:
+    max-spaces-before: 0
+    min-spaces-after: 1
+    max-spaces-after: 1
+    level: error
+
+  # Comments
+  comments:
+    level: warning
+    min-spaces-from-content: 2
+
+  # Hyphens
+  hyphens:
+    level: error
+
+  # Quotes
+  quoted-strings:
+    only-when-needed: true
+    required: only-when-needed
+    level: warning
+
+  # Truthy values
+  truthy:
+    allowed-values: ["true", "false", "yes", "no", "on", "off"]
+    level: warning
+
+  # New lines at end of file
+  new-lines:
+    type: unix
+    level: error
+
+  # Octal values
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: false
+    level: error
+
+# Ignore certain files/patterns
+ignore:
+  - ".git/"
+  - "__pycache__/"
+  - "*.pyc"
+  - "node_modules/"
+  - ".venv/"
+  - "venv/"
+  - "frontend/build/"
+  - "frontend/node_modules/"
+  - ".cache/"
+  - "htmlcov/"
+  - "*.egg-info/"
+  - "dist/"
+  - "build/"
